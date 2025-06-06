@@ -2,16 +2,14 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(layout="wide")
-st.markdown(
-    """
-    <div style="display:flex; align-items:center; gap:20px;">
-        <img src="https://raw.githubusercontent.com/eonferraz/conciliador-financeiro/main/logo.png" width="60">
-        <h1 style="margin:0;">Conciliador Financeiro x Contábil</h1>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# Logo + título lado a lado
+col_logo, col_titulo = st.columns([0.15, 0.85])
 
+with col_logo:
+    st.image("logo.png", width=60)
+
+with col_titulo:
+    st.markdown("<h1 style='margin-top: 10px;'>Conciliador Financeiro x Contábil</h1>", unsafe_allow_html=True)
 
 # --- Uploads ---
 col1, col2 = st.columns(2)
