@@ -44,7 +44,7 @@ with col3:
         if aba_fin:
             df_fin = pd.read_excel(xls_fin, sheet_name=aba_fin)
             st.write("Prévia (5 linhas):")
-            st.dataframe(df_fin.head(10))
+            st.dataframe(df_fin.head(5))
 
 with col4:
     if arquivo_con:
@@ -53,7 +53,7 @@ with col4:
         if aba_con:
             df_con = pd.read_excel(xls_con, sheet_name=aba_con)
             st.write("Prévia (5 linhas):")
-            st.dataframe(df_con.head(10))
+            st.dataframe(df_con.head(5))
 
 # --- Mapeamento de campos com sugestão ---
 def sugerir_coluna(df, tipo):
