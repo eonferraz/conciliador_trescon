@@ -10,4 +10,4 @@ Este projeto é um app em Python + Streamlit que permite visualizar e conciliar 
 
 ---
 
-Criado por Eduardo Ferraz 🧠
+Criado por Paulo Eduardo Ferraz 🧠
