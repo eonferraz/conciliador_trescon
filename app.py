@@ -107,29 +107,53 @@ if arquivo_fin and arquivo_con:
             df_con[campo_data_con] = pd.to_datetime(df_con[campo_data_con], errors='coerce')
 
     if st.button("🔍 Iniciar Conciliação"):
-        df_fin['_chave'] = df_fin[campo_doc_fin].astype(str).str.strip() + '_' + df_fin['VALOR_CONSOLIDADO'].astype(str)
-        df_con['_chave'] = df_con[campo_doc_con].astype(str).str.strip() + '_' + df_con['VALOR_CONSOLIDADO'].astype(str)
+        tolerancia = 0.05
 
-        conciliados_fin = df_fin[df_fin['_chave'].isin(df_con['_chave'])].copy()
-        conciliados_con = df_con[df_con['_chave'].isin(df_fin['_chave'])].copy()
+        df_fin['STATUS'] = 'Não Encontrado'
+        df_con['STATUS'] = 'Não Encontrado'
 
-        df_fin['STATUS'] = np.where(df_fin['_chave'].isin(df_con['_chave']), 'Conciliado', 'Não Encontrado')
-        df_con['STATUS'] = np.where(df_con['_chave'].isin(df_fin['_chave']), 'Conciliado', 'Não Encontrado')
+        for i, linha_fin in df_fin.iterrows():
+            valor_fin = linha_fin['VALOR_CONSOLIDADO']
+            doc_fin = str(linha_fin[campo_doc_fin]).strip()
+
+            candidatos = df_con[abs(df_con['VALOR_CONSOLIDADO'] - valor_fin) <= tolerancia]
+            if not candidatos.empty:
+                if doc_fin in candidatos[campo_doc_con].astype(str).str.strip().values:
+                    idx_match = candidatos[candidatos[campo_doc_con].astype(str).str.strip() == doc_fin].index[0]
+                    df_fin.at[i, 'STATUS'] = 'Conciliado'
+                    df_con.at[idx_match, 'STATUS'] = 'Conciliado'
+                else:
+                    idx_parcial = candidatos.index[0]
+                    df_fin.at[i, 'STATUS'] = 'Parcial'
+                    df_con.at[idx_parcial, 'STATUS'] = 'Parcial'
 
         resumo = pd.DataFrame({
             'Fonte': ['Financeiro', 'Contábil'],
             'Total de Linhas': [len(df_fin), len(df_con)],
-            'Conciliados': [len(conciliados_fin), len(conciliados_con)],
-            'Não Encontrados': [len(df_fin) - len(conciliados_fin), len(df_con) - len(conciliados_con)]
+            'Conciliados': [len(df_fin[df_fin['STATUS'] == 'Conciliado']), len(df_con[df_con['STATUS'] == 'Conciliado'])],
+            'Parciais': [len(df_fin[df_fin['STATUS'] == 'Parcial']), len(df_con[df_con['STATUS'] == 'Parcial'])],
+            'Não Encontrados': [len(df_fin[df_fin['STATUS'] == 'Não Encontrado']), len(df_con[df_con['STATUS'] == 'Não Encontrado'])]
         })
 
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            for df, aba in [(df_fin, 'Financeiro'), (df_con, 'Contabil')]:
-                df.to_excel(writer, sheet_name=aba, index=False)
+            df_fin.to_excel(writer, sheet_name='Financeiro - Original', index=False)
+            df_con.to_excel(writer, sheet_name='Contabil - Original', index=False)
+
+            campos_export_fin = [campo_data_fin, campo_doc_fin, campo_parceiro_fin, 'VALOR_CONSOLIDADO', 'STATUS']
+            campos_export_con = [campo_data_con, campo_doc_con, campo_parceiro_con, 'VALOR_CONSOLIDADO', 'STATUS']
+
+            df_fin[campos_export_fin].to_excel(writer, sheet_name='Financeiro', index=False)
+            df_con[campos_export_con].to_excel(writer, sheet_name='Contabil', index=False)
+
+            for aba, df in [('Financeiro', df_fin[campos_export_fin]), ('Contabil', df_con[campos_export_con])]:
                 ws = writer.sheets[aba]
                 for i, status in enumerate(df['STATUS']):
-                    cor = {'Conciliado': '#C6EFCE', 'Não Encontrado': '#FFC7CE'}.get(status, '#FFEB9C')
+                    cor = {
+                        'Conciliado': '#C6EFCE',
+                        'Parcial': '#FFEB9C',
+                        'Não Encontrado': '#FFC7CE'
+                    }.get(status, '#FFFFFF')
                     ws.set_row(i+1, None, writer.book.add_format({'bg_color': cor}))
 
             resumo.to_excel(writer, sheet_name='Resumo', index=False)
