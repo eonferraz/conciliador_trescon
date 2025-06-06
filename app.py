@@ -2,7 +2,16 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(layout="wide")
-st.title("TRESCON - Conciliador Financeiro x Contábil")
+st.markdown(
+    """
+    <div style="display:flex; align-items:center; gap:20px;">
+        <img src="https://raw.githubusercontent.com/eduardoferraz/conciliador-financeiro/main/logo.png" width="60">
+        <h1 style="margin:0;">Conciliador Financeiro x Contábil</h1>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # --- Uploads ---
 col1, col2 = st.columns(2)
