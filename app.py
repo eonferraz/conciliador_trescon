@@ -69,7 +69,7 @@ with col4:
             df_con = pd.read_excel(xls_con, sheet_name=aba_con)
 
 if df_fin is not None and df_con is not None:
-    st.markdown("### 🧹 Mapeamento dos campos para conciliação")
+    st.markdown("### 🭹 Mapeamento dos campos para conciliação")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -90,9 +90,7 @@ if df_fin is not None and df_con is not None:
 
     # Exibição com destaque
     def destacar(df, colunas):
-        def highlight_cols(x):
-            return ['background-color: #FFF4CC' if x.name in colunas else '' for _ in x]
-        return df.style.apply(highlight_cols, axis=1)
+        return df.style.apply(lambda x: ['background-color: #FFF4CC' if col in colunas else '' for col in x.index], axis=1)
 
     st.markdown("#### Visualização destacando campos mapeados")
     col5, col6 = st.columns(2)
@@ -100,9 +98,9 @@ if df_fin is not None and df_con is not None:
     with col5:
         st.write("Financeiro")
         destaques_fin = [campo_valor_fin, campo_data_fin, campo_doc_fin, campo_parceiro_fin]
-        st.dataframe(destacar(df_fin.head(5), destaques_fin))
+        st.dataframe(df_fin.head(5).style.highlight_cols(destaques_fin, color="#FFF4CC"))
 
     with col6:
         st.write("Contábil")
         destaques_con = [campo_valor_con, campo_data_con, campo_doc_con, campo_parceiro_con]
-        st.dataframe(destacar(df_con.head(5), destaques_con))
+        st.dataframe(df_con.head(5).style.highlight_cols(destaques_con, color="#FFF4CC"))
