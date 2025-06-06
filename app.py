@@ -65,54 +65,59 @@ if arquivo_con:
     df_con = pd.read_excel(xls_con, sheet_name=aba_con)
 
 # --- Campos mapeados com destaque ---
-if df_fin is not None:
-    st.subheader("🔹 Arquivo Financeiro")
-    colunas_fin = df_fin.columns.tolist()
-    modo_fin = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_fin", horizontal=True)
-    campos_fin = []
+if df_fin is not None or df_con is not None:
+    col_f, col_c = st.columns(2)
 
-    with st.container():
-        col_v1, col_v2 = st.columns([1, 1])
-        if modo_fin == "Campo único de valor":
-            with col_v1:
-                campo_valor_fin = st.selectbox("Valor:", colunas_fin, key="valor_fin", index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0)
-            df_fin["VALOR_CONSOLIDADO"] = pd.to_numeric(df_fin[campo_valor_fin], errors="coerce").fillna(0)
-            campos_fin.append(campo_valor_fin)
-        else:
-            with col_v1:
-                campo_credito_fin = st.selectbox("Crédito:", colunas_fin, key="credito_fin", index=colunas_fin.index(sugerir_coluna(df_fin, 'credito')) if sugerir_coluna(df_fin, 'credito') in colunas_fin else 0)
-            with col_v2:
-                campo_debito_fin = st.selectbox("Débito:", colunas_fin, key="debito_fin", index=colunas_fin.index(sugerir_coluna(df_fin, 'debito')) if sugerir_coluna(df_fin, 'debito') in colunas_fin else 0)
-            credito = pd.to_numeric(df_fin[campo_credito_fin], errors="coerce").fillna(0)
-            debito = pd.to_numeric(df_fin[campo_debito_fin], errors="coerce").fillna(0)
-            df_fin["VALOR_CONSOLIDADO"] = credito - debito
-            campos_fin.extend([campo_credito_fin, campo_debito_fin])
+    with col_f:
+        if df_fin is not None:
+            st.subheader("🔹 Arquivo Financeiro")
+            colunas_fin = df_fin.columns.tolist()
+            modo_fin = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_fin", horizontal=True)
+            campos_fin = []
 
-    campos_fin.append("VALOR_CONSOLIDADO")
-    st.dataframe(destacar_colunas(df_fin.head(5), campos_fin))
+            with st.container():
+                col_v1, col_v2 = st.columns([1, 1])
+                if modo_fin == "Campo único de valor":
+                    with col_v1:
+                        campo_valor_fin = st.selectbox("Valor:", colunas_fin, key="valor_fin", index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0)
+                    df_fin["VALOR_CONSOLIDADO"] = pd.to_numeric(df_fin[campo_valor_fin], errors="coerce").fillna(0)
+                    campos_fin.append(campo_valor_fin)
+                else:
+                    with col_v1:
+                        campo_credito_fin = st.selectbox("Crédito:", colunas_fin, key="credito_fin", index=colunas_fin.index(sugerir_coluna(df_fin, 'credito')) if sugerir_coluna(df_fin, 'credito') in colunas_fin else 0)
+                    with col_v2:
+                        campo_debito_fin = st.selectbox("Débito:", colunas_fin, key="debito_fin", index=colunas_fin.index(sugerir_coluna(df_fin, 'debito')) if sugerir_coluna(df_fin, 'debito') in colunas_fin else 0)
+                    credito = pd.to_numeric(df_fin[campo_credito_fin], errors="coerce").fillna(0)
+                    debito = pd.to_numeric(df_fin[campo_debito_fin], errors="coerce").fillna(0)
+                    df_fin["VALOR_CONSOLIDADO"] = credito - debito
+                    campos_fin.extend([campo_credito_fin, campo_debito_fin])
 
-if df_con is not None:
-    st.subheader("🔶 Arquivo Contábil")
-    colunas_con = df_con.columns.tolist()
-    modo_con = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_con", horizontal=True)
-    campos_con = []
+            campos_fin.append("VALOR_CONSOLIDADO")
+            st.dataframe(destacar_colunas(df_fin.head(5), campos_fin))
 
-    with st.container():
-        col_c1, col_c2 = st.columns([1, 1])
-        if modo_con == "Campo único de valor":
-            with col_c1:
-                campo_valor_con = st.selectbox("Valor:", colunas_con, key="valor_con", index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0)
-            df_con["VALOR_CONSOLIDADO"] = pd.to_numeric(df_con[campo_valor_con], errors="coerce").fillna(0)
-            campos_con.append(campo_valor_con)
-        else:
-            with col_c1:
-                campo_credito_con = st.selectbox("Crédito:", colunas_con, key="credito_con", index=colunas_con.index(sugerir_coluna(df_con, 'credito')) if sugerir_coluna(df_con, 'credito') in colunas_con else 0)
-            with col_c2:
-                campo_debito_con = st.selectbox("Débito:", colunas_con, key="debito_con", index=colunas_con.index(sugerir_coluna(df_con, 'debito')) if sugerir_coluna(df_con, 'debito') in colunas_con else 0)
-            credito = pd.to_numeric(df_con[campo_credito_con], errors="coerce").fillna(0)
-            debito = pd.to_numeric(df_con[campo_debito_con], errors="coerce").fillna(0)
-            df_con["VALOR_CONSOLIDADO"] = credito - debito
-            campos_con.extend([campo_credito_con, campo_debito_con])
+    with col_c:
+        if df_con is not None:
+            st.subheader("🔶 Arquivo Contábil")
+            colunas_con = df_con.columns.tolist()
+            modo_con = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_con", horizontal=True)
+            campos_con = []
 
-    campos_con.append("VALOR_CONSOLIDADO")
-    st.dataframe(destacar_colunas(df_con.head(5), campos_con))
+            with st.container():
+                col_c1, col_c2 = st.columns([1, 1])
+                if modo_con == "Campo único de valor":
+                    with col_c1:
+                        campo_valor_con = st.selectbox("Valor:", colunas_con, key="valor_con", index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0)
+                    df_con["VALOR_CONSOLIDADO"] = pd.to_numeric(df_con[campo_valor_con], errors="coerce").fillna(0)
+                    campos_con.append(campo_valor_con)
+                else:
+                    with col_c1:
+                        campo_credito_con = st.selectbox("Crédito:", colunas_con, key="credito_con", index=colunas_con.index(sugerir_coluna(df_con, 'credito')) if sugerir_coluna(df_con, 'credito') in colunas_con else 0)
+                    with col_c2:
+                        campo_debito_con = st.selectbox("Débito:", colunas_con, key="debito_con", index=colunas_con.index(sugerir_coluna(df_con, 'debito')) if sugerir_coluna(df_con, 'debito') in colunas_con else 0)
+                    credito = pd.to_numeric(df_con[campo_credito_con], errors="coerce").fillna(0)
+                    debito = pd.to_numeric(df_con[campo_debito_con], errors="coerce").fillna(0)
+                    df_con["VALOR_CONSOLIDADO"] = credito - debito
+                    campos_con.extend([campo_credito_con, campo_debito_con])
+
+            campos_con.append("VALOR_CONSOLIDADO")
+            st.dataframe(destacar_colunas(df_con.head(5), campos_con))
