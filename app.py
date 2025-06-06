@@ -22,9 +22,6 @@ st.markdown(
 #------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-
-
-
 # --- Uploads ---
 col1, col2 = st.columns(2)
 
@@ -60,3 +57,41 @@ with col4:
             df_con = pd.read_excel(xls_con, sheet_name=aba_con)
             st.write("Prévia (5 linhas):")
             st.dataframe(df_con.head(5))
+
+
+# --- Mapeamento de campos com sugestão ---
+def sugerir_coluna(df, tipo):
+    nomes = [col.lower() for col in df.columns]
+    
+    sugestoes = {
+        'valor': ['valor', 'vlr_total', 'vlr', 'total'],
+        'data': ['data', 'dt_pagamento', 'dt_baixa', 'dt_lancamento'],
+        'documento': ['documento', 'doc', 'nf', 'nota', 'numero'],
+        'parceiro': ['parceiro', 'cliente', 'fornecedor', 'cnpj', 'razao']
+    }
+
+    for sugestao in sugestoes[tipo]:
+        for i, nome in enumerate(nomes):
+            if sugestao in nome:
+                return df.columns[i]
+    return None
+
+if df_fin is not None and df_con is not None:
+    st.markdown("### 🧩 Mapeamento dos campos para conciliação")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("🔷 Arquivo Financeiro")
+        colunas_fin = df_fin.columns.tolist()
+        campo_valor_fin = st.selectbox("Campo de Valor:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0)
+        campo_data_fin = st.selectbox("Campo de Data:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'data')) if sugerir_coluna(df_fin, 'data') in colunas_fin else 0)
+        campo_doc_fin = st.selectbox("Campo de Documento:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'documento')) if sugerir_coluna(df_fin, 'documento') in colunas_fin else 0)
+        campo_parceiro_fin = st.selectbox("Campo de Parceiro:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'parceiro')) if sugerir_coluna(df_fin, 'parceiro') in colunas_fin else 0)
+
+    with col2:
+        st.subheader("🔶 Arquivo Contábil")
+        colunas_con = df_con.columns.tolist()
+        campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0)
+        campo_data_con = st.selectbox("Campo de Data:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'data')) if sugerir_coluna(df_con, 'data') in colunas_con else 0)
+        campo_doc_con = st.selectbox("Campo de Documento:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'documento')) if sugerir_coluna(df_con, 'documento') in colunas_con else 0)
+        campo_parceiro_con = st.selectbox("Campo de Parceiro:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'parceiro')) if sugerir_coluna(df_con, 'parceiro') in colunas_con else 0)
