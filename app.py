@@ -7,16 +7,9 @@ st.set_page_config(layout="wide")
 # Logo + Título com faixa branca e alinhamento centralizado do título
 st.markdown(
     """
-    <div style="background-color: white; padding: 20px 30px; border-radius: 8px; 
-                margin-bottom: 30px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; height: 80px;">
-
-        <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=304,fit=crop,q=95/Aq2B471lDpFnv1BK/logo---trescon-30-anos-mv0jg6Lo2EiV7yLp.png"
-             style="height: 60px; position: absolute; left: 30px; top: 50%; transform: translateY(-50%);">
-
-        <h1 style="margin: 0; font-size: 2.4em; text-align: center; line-height: 80px;">
-            Conciliador Financeiro x Contábil
-        </h1>
-
+    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+        <img src="logo.png" style="height: 60px;">
+        <h1 style="margin: 0; font-size: 2.2em;">Conciliador Financeiro x Contábil</h1>
     </div>
     """,
     unsafe_allow_html=True
