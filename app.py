@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(layout="wide")
-st.title("📊 Conciliador Financeiro x Contábil")
+st.title("TRESCON - Conciliador Financeiro x Contábil")
 
 # --- Uploads ---
 col1, col2 = st.columns(2)
