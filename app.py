@@ -34,27 +34,6 @@ with col2:
     aba_con = None
     df_con = None
 
-# --- Processamento e preview ---
-col3, col4 = st.columns(2)
-
-with col3:
-    if arquivo_fin:
-        xls_fin = pd.ExcelFile(arquivo_fin)
-        aba_fin = st.selectbox("Escolha a aba (financeiro):", xls_fin.sheet_names, key="aba_fin")
-        if aba_fin:
-            df_fin = pd.read_excel(xls_fin, sheet_name=aba_fin)
-            st.write("Prévia (5 linhas):")
-            st.dataframe(df_fin.head(5))
-
-with col4:
-    if arquivo_con:
-        xls_con = pd.ExcelFile(arquivo_con)
-        aba_con = st.selectbox("Escolha a aba (contábil):", xls_con.sheet_names, key="aba_con")
-        if aba_con:
-            df_con = pd.read_excel(xls_con, sheet_name=aba_con)
-            st.write("Prévia (5 linhas):")
-            st.dataframe(df_con.head(5))
-
 # --- Mapeamento de campos com sugestão ---
 def sugerir_coluna(df, tipo):
     nomes = [col.lower() for col in df.columns]
@@ -72,6 +51,23 @@ def sugerir_coluna(df, tipo):
                 return df.columns[i]
     return None
 
+# --- Processamento e preview ---
+col3, col4 = st.columns(2)
+
+with col3:
+    if arquivo_fin:
+        xls_fin = pd.ExcelFile(arquivo_fin)
+        aba_fin = st.selectbox("Escolha a aba (financeiro):", xls_fin.sheet_names, key="aba_fin")
+        if aba_fin:
+            df_fin = pd.read_excel(xls_fin, sheet_name=aba_fin)
+
+with col4:
+    if arquivo_con:
+        xls_con = pd.ExcelFile(arquivo_con)
+        aba_con = st.selectbox("Escolha a aba (contábil):", xls_con.sheet_names, key="aba_con")
+        if aba_con:
+            df_con = pd.read_excel(xls_con, sheet_name=aba_con)
+
 if df_fin is not None and df_con is not None:
     st.markdown("### 🧹 Mapeamento dos campos para conciliação")
     col1, col2 = st.columns(2)
@@ -79,15 +75,34 @@ if df_fin is not None and df_con is not None:
     with col1:
         st.subheader("🔹 Arquivo Financeiro")
         colunas_fin = df_fin.columns.tolist()
-        campo_valor_fin = st.selectbox("Campo de Valor:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0)
-        campo_data_fin = st.selectbox("Campo de Data:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'data')) if sugerir_coluna(df_fin, 'data') in colunas_fin else 0)
-        campo_doc_fin = st.selectbox("Campo de Documento:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'documento')) if sugerir_coluna(df_fin, 'documento') in colunas_fin else 0)
-        campo_parceiro_fin = st.selectbox("Campo de Parceiro:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'parceiro')) if sugerir_coluna(df_fin, 'parceiro') in colunas_fin else 0)
+        campo_valor_fin = st.selectbox("Campo de Valor:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0, key="valor_fin")
+        campo_data_fin = st.selectbox("Campo de Data:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'data')) if sugerir_coluna(df_fin, 'data') in colunas_fin else 0, key="data_fin")
+        campo_doc_fin = st.selectbox("Campo de Documento:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'documento')) if sugerir_coluna(df_fin, 'documento') in colunas_fin else 0, key="doc_fin")
+        campo_parceiro_fin = st.selectbox("Campo de Parceiro:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'parceiro')) if sugerir_coluna(df_fin, 'parceiro') in colunas_fin else 0, key="parceiro_fin")
 
     with col2:
         st.subheader("🔶 Arquivo Contábil")
         colunas_con = df_con.columns.tolist()
-        campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0)
-        campo_data_con = st.selectbox("Campo de Data:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'data')) if sugerir_coluna(df_con, 'data') in colunas_con else 0)
-        campo_doc_con = st.selectbox("Campo de Documento:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'documento')) if sugerir_coluna(df_con, 'documento') in colunas_con else 0)
-        campo_parceiro_con = st.selectbox("Campo de Parceiro:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'parceiro')) if sugerir_coluna(df_con, 'parceiro') in colunas_con else 0)
+        campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0, key="valor_con")
+        campo_data_con = st.selectbox("Campo de Data:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'data')) if sugerir_coluna(df_con, 'data') in colunas_con else 0, key="data_con")
+        campo_doc_con = st.selectbox("Campo de Documento:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'documento')) if sugerir_coluna(df_con, 'documento') in colunas_con else 0, key="doc_con")
+        campo_parceiro_con = st.selectbox("Campo de Parceiro:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'parceiro')) if sugerir_coluna(df_con, 'parceiro') in colunas_con else 0, key="parceiro_con")
+
+    # Exibição com destaque
+    def destacar(df, colunas):
+        def highlight_cols(x):
+            return ['background-color: #FFF4CC' if x.name in colunas else '' for _ in x]
+        return df.style.apply(highlight_cols, axis=1)
+
+    st.markdown("#### Visualização destacando campos mapeados")
+    col5, col6 = st.columns(2)
+
+    with col5:
+        st.write("Financeiro")
+        destaques_fin = [campo_valor_fin, campo_data_fin, campo_doc_fin, campo_parceiro_fin]
+        st.dataframe(destacar(df_fin.head(5), destaques_fin))
+
+    with col6:
+        st.write("Contábil")
+        destaques_con = [campo_valor_con, campo_data_con, campo_doc_con, campo_parceiro_con]
+        st.dataframe(destacar(df_con.head(5), destaques_con))
