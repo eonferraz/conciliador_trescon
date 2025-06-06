@@ -27,8 +27,16 @@ st.markdown(
 # Tradução visual dos elementos do file_uploader
 st.markdown("""
 <style>
-    .stFileUploader label div::after {
+    .stFileUploader > div:first-child {
+        display: none !important;
+    }
+    .stFileUploader label div[data-testid="stFileDropzone"]::before {
         content: "Arraste e solte o arquivo aqui";
+        display: block;
+        color: #666;
+        font-size: 0.9em;
+        text-align: center;
+        margin-bottom: 10px;
     }
     .stFileUploader button {
         visibility: hidden;
