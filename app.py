@@ -77,9 +77,9 @@ if df_fin is not None and df_con is not None:
     with col1:
         st.subheader("🔹 Arquivo Financeiro")
         colunas_fin = df_fin.columns.tolist()
-        modo_fin = st.radio("Formato de valor:", ["Valor único", "Crédito e Débito"], key="modo_fin")
+        modo_fin = st.radio("Qual formato de valor o arquivo financeiro utiliza?", ["Campo único de valor", "Campos de crédito e débito"], key="modo_fin")
 
-        if modo_fin == "Valor único":
+        if modo_fin == "Campo único de valor":
             campo_valor_fin = st.selectbox("Campo de Valor:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0, key="valor_fin")
             df_fin["VALOR_CONSOLIDADO"] = df_fin[campo_valor_fin]
             campos_fin = [campo_valor_fin]
@@ -96,9 +96,9 @@ if df_fin is not None and df_con is not None:
     with col2:
         st.subheader("🔶 Arquivo Contábil")
         colunas_con = df_con.columns.tolist()
-        modo_con = st.radio("Formato de valor:", ["Valor único", "Crédito e Débito"], key="modo_con")
+        modo_con = st.radio("Qual formato de valor o arquivo contábil utiliza?", ["Campo único de valor", "Campos de crédito e débito"], key="modo_con")
 
-        if modo_con == "Valor único":
+        if modo_con == "Campo único de valor":
             campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0, key="valor_con")
             df_con["VALOR_CONSOLIDADO"] = df_con[campo_valor_con]
             campos_con = [campo_valor_con]
