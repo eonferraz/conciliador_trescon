@@ -10,13 +10,16 @@ st.set_page_config(layout="wide")
 # Logo + título lado a lado
 st.markdown(
     """
-    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
-        <img src="logo.png" style="height: 60px;">
-        <h1 style="margin: 0; font-size: 2.2em;">Conciliador Financeiro x Contábil</h1>
+    <div style="background-color: white; padding: 20px 30px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <img src="logo.png" style="height: 60px;">
+            <h1 style="margin: 0; font-size: 2.4em;">Conciliador Financeiro x Contábil</h1>
+        </div>
     </div>
     """,
     unsafe_allow_html=True
 )
+
 #------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
