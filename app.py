@@ -5,7 +5,7 @@ st.set_page_config(layout="wide")
 st.markdown(
     """
     <div style="display:flex; align-items:center; gap:20px;">
-        <img src="https://raw.githubusercontent.com/eduardoferraz/conciliador-financeiro/main/logo.png" width="60">
+        <img src="https://raw.githubusercontent.com/eonferraz/conciliador-financeiro/main/logo.png" width="60">
         <h1 style="margin:0;">Conciliador Financeiro x Contábil</h1>
     </div>
     """,
