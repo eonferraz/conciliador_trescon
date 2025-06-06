@@ -40,6 +40,8 @@ def sugerir_coluna(df, tipo):
 
     sugestoes = {
         'valor': ['valor', 'vlr_total', 'vlr', 'total'],
+        'credito': ['credito', 'crédito', 'vlr_cred'],
+        'debito': ['debito', 'débito', 'vlr_deb'],
         'data': ['data', 'dt_pagamento', 'dt_baixa', 'dt_lancamento'],
         'documento': ['documento', 'doc', 'nf', 'nota', 'numero'],
         'parceiro': ['parceiro', 'cliente', 'fornecedor', 'cnpj', 'razao']
@@ -75,7 +77,18 @@ if df_fin is not None and df_con is not None:
     with col1:
         st.subheader("🔹 Arquivo Financeiro")
         colunas_fin = df_fin.columns.tolist()
-        campo_valor_fin = st.selectbox("Campo de Valor:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0, key="valor_fin")
+        modo_fin = st.radio("Formato de valor:", ["Valor único", "Crédito e Débito"], key="modo_fin")
+
+        if modo_fin == "Valor único":
+            campo_valor_fin = st.selectbox("Campo de Valor:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0, key="valor_fin")
+            df_fin["VALOR_CONSOLIDADO"] = df_fin[campo_valor_fin]
+            campos_fin = [campo_valor_fin]
+        else:
+            campo_credito_fin = st.selectbox("Campo de Crédito:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'credito')) if sugerir_coluna(df_fin, 'credito') in colunas_fin else 0, key="credito_fin")
+            campo_debito_fin = st.selectbox("Campo de Débito:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'debito')) if sugerir_coluna(df_fin, 'debito') in colunas_fin else 0, key="debito_fin")
+            df_fin["VALOR_CONSOLIDADO"] = df_fin[campo_credito_fin].fillna(0) - df_fin[campo_debito_fin].fillna(0)
+            campos_fin = [campo_credito_fin, campo_debito_fin]
+
         campo_data_fin = st.selectbox("Campo de Data:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'data')) if sugerir_coluna(df_fin, 'data') in colunas_fin else 0, key="data_fin")
         campo_doc_fin = st.selectbox("Campo de Documento:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'documento')) if sugerir_coluna(df_fin, 'documento') in colunas_fin else 0, key="doc_fin")
         campo_parceiro_fin = st.selectbox("Campo de Parceiro:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'parceiro')) if sugerir_coluna(df_fin, 'parceiro') in colunas_fin else 0, key="parceiro_fin")
@@ -83,24 +96,38 @@ if df_fin is not None and df_con is not None:
     with col2:
         st.subheader("🔶 Arquivo Contábil")
         colunas_con = df_con.columns.tolist()
-        campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0, key="valor_con")
+        modo_con = st.radio("Formato de valor:", ["Valor único", "Crédito e Débito"], key="modo_con")
+
+        if modo_con == "Valor único":
+            campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0, key="valor_con")
+            df_con["VALOR_CONSOLIDADO"] = df_con[campo_valor_con]
+            campos_con = [campo_valor_con]
+        else:
+            campo_credito_con = st.selectbox("Campo de Crédito:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'credito')) if sugerir_coluna(df_con, 'credito') in colunas_con else 0, key="credito_con")
+            campo_debito_con = st.selectbox("Campo de Débito:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'debito')) if sugerir_coluna(df_con, 'debito') in colunas_con else 0, key="debito_con")
+            df_con["VALOR_CONSOLIDADO"] = df_con[campo_credito_con].fillna(0) - df_con[campo_debito_con].fillna(0)
+            campos_con = [campo_credito_con, campo_debito_con]
+
         campo_data_con = st.selectbox("Campo de Data:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'data')) if sugerir_coluna(df_con, 'data') in colunas_con else 0, key="data_con")
         campo_doc_con = st.selectbox("Campo de Documento:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'documento')) if sugerir_coluna(df_con, 'documento') in colunas_con else 0, key="doc_con")
         campo_parceiro_con = st.selectbox("Campo de Parceiro:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'parceiro')) if sugerir_coluna(df_con, 'parceiro') in colunas_con else 0, key="parceiro_con")
 
-    # Exibição com destaque nas colunas
     def destacar_colunas(df, colunas_destaque):
-        return df.style.apply(lambda row: ["background-color: #FFF4CC" if col in colunas_destaque else "" for col in df.columns], axis=1)
+        destaque = pd.DataFrame('', index=df.index, columns=df.columns)
+        for col in colunas_destaque:
+            if col in destaque.columns:
+                destaque[col] = 'background-color: #FFF4CC'
+        return df.style.apply(lambda _: destaque, axis=None)
 
     st.markdown("#### Visualização destacando campos mapeados")
     col5, col6 = st.columns(2)
 
     with col5:
         st.write("Financeiro")
-        destaques_fin = [campo_valor_fin, campo_data_fin, campo_doc_fin, campo_parceiro_fin]
+        destaques_fin = campos_fin + [campo_data_fin, campo_doc_fin, campo_parceiro_fin, "VALOR_CONSOLIDADO"]
         st.dataframe(destacar_colunas(df_fin.head(5), destaques_fin))
 
     with col6:
         st.write("Contábil")
-        destaques_con = [campo_valor_con, campo_data_con, campo_doc_con, campo_parceiro_con]
+        destaques_con = campos_con + [campo_data_con, campo_doc_con, campo_parceiro_con, "VALOR_CONSOLIDADO"]
         st.dataframe(destacar_colunas(df_con.head(5), destaques_con))
