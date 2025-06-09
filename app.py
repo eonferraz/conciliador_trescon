@@ -57,6 +57,8 @@ if arquivo_fin and arquivo_con:
     xls_fin = pd.ExcelFile(arquivo_fin)
     xls_con = pd.ExcelFile(arquivo_con)
 
+    st.markdown("<style>div[data-testid='stSelectbox'] label, div[data-testid='stRadio'] label, div[data-testid='stTextInput'] label { font-size: 0.85rem !important; }</style>", unsafe_allow_html=True)
+
     with st.expander("⚙️ Parâmetros de Conciliação", expanded=True):
         col5, col6 = st.columns(2)
 
@@ -64,6 +66,7 @@ if arquivo_fin and arquivo_con:
             st.write("**Financeiro**")
             aba_fin = st.selectbox("Escolha a aba (financeiro):", xls_fin.sheet_names, key="aba_fin")
             df_fin = pd.read_excel(xls_fin, sheet_name=aba_fin)
+            st.dataframe(df_fin.head(5), height=150)
             colunas_fin = df_fin.columns.tolist()
 
             modo_fin = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_fin")
@@ -84,6 +87,7 @@ if arquivo_fin and arquivo_con:
             st.write("**Contábil**")
             aba_con = st.selectbox("Escolha a aba (contábil):", xls_con.sheet_names, key="aba_con")
             df_con = pd.read_excel(xls_con, sheet_name=aba_con)
+            st.dataframe(df_con.head(5), height=150)
             colunas_con = df_con.columns.tolist()
 
             modo_con = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_con")
@@ -107,12 +111,16 @@ if arquivo_fin and arquivo_con:
             df_con[campo_data_con] = pd.to_datetime(df_con[campo_data_con], errors='coerce')
 
     # Conciliação
-    st.divider()
-    st.subheader("📊 Resultado da Conciliação")
+    if st.button("🔍 Executar Conciliação"):
+        with st.spinner("Conciliando registros..."):
+            df_fin['STATUS'] = 'Não Encontrado'
+            df_fin['PARCEIRO_NORMALIZADO'] = df_fin[campo_parceiro_fin].apply(normalizar_nome)
+            df_con['PARCEIRO_NORMALIZADO'] = df_con[campo_parceiro_con].apply(normalizar_nome)
 
-    df_fin['STATUS'] = 'Não Encontrado'
-    df_fin['PARCEIRO_NORMALIZADO'] = df_fin[campo_parceiro_fin].apply(normalizar_nome)
-    df_con['PARCEIRO_NORMALIZADO'] = df_con[campo_parceiro_con].apply(normalizar_nome)
+            , file_name="consolidado_filtrado.xlsx")
+        df_fin['STATUS'] = 'Não Encontrado'
+        df_fin['PARCEIRO_NORMALIZADO'] = df_fin[campo_parceiro_fin].apply(normalizar_nome)
+        df_con['PARCEIRO_NORMALIZADO'] = df_con[campo_parceiro_con].apply(normalizar_nome)
 
     for i, row_fin in df_fin.iterrows():
         for j, row_con in df_con.iterrows():
