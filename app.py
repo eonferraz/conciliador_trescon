@@ -117,56 +117,51 @@ if arquivo_fin and arquivo_con:
             df_fin['PARCEIRO_NORMALIZADO'] = df_fin[campo_parceiro_fin].apply(normalizar_nome)
             df_con['PARCEIRO_NORMALIZADO'] = df_con[campo_parceiro_con].apply(normalizar_nome)
 
-            , file_name="consolidado_filtrado.xlsx")
-        df_fin['STATUS'] = 'Não Encontrado'
-        df_fin['PARCEIRO_NORMALIZADO'] = df_fin[campo_parceiro_fin].apply(normalizar_nome)
-        df_con['PARCEIRO_NORMALIZADO'] = df_con[campo_parceiro_con].apply(normalizar_nome)
+            for i, row_fin in df_fin.iterrows():
+                for j, row_con in df_con.iterrows():
+                    if abs(row_fin['VALOR_CONSOLIDADO'] - row_con['VALOR_CONSOLIDADO']) <= 0.05:
+                        if str(row_fin[campo_doc_fin]).strip() == str(row_con[campo_doc_con]).strip():
+                            df_fin.at[i, 'STATUS'] = 'Conciliado'
+                            break
+                        elif fuzz.partial_ratio(row_fin['PARCEIRO_NORMALIZADO'], row_con['PARCEIRO_NORMALIZADO']) >= 85:
+                            df_fin.at[i, 'STATUS'] = 'Parcial'
 
-    for i, row_fin in df_fin.iterrows():
-        for j, row_con in df_con.iterrows():
-            if abs(row_fin['VALOR_CONSOLIDADO'] - row_con['VALOR_CONSOLIDADO']) <= 0.05:
-                if str(row_fin[campo_doc_fin]).strip() == str(row_con[campo_doc_con]).strip():
-                    df_fin.at[i, 'STATUS'] = 'Conciliado'
-                    break
-                elif fuzz.partial_ratio(row_fin['PARCEIRO_NORMALIZADO'], row_con['PARCEIRO_NORMALIZADO']) >= 85:
-                    df_fin.at[i, 'STATUS'] = 'Parcial'
+            # Filtros
+            status_filtrado = st.selectbox("Filtrar por status:", ["Todos", "Conciliado", "Parcial", "Não Encontrado"])
+            parceiro_filtrado = st.text_input("Filtrar por parceiro:").lower().strip()
+            doc_filtrado = st.text_input("Filtrar por documento:").lower().strip()
 
-    # Filtros
-    status_filtrado = st.selectbox("Filtrar por status:", ["Todos", "Conciliado", "Parcial", "Não Encontrado"])
-    parceiro_filtrado = st.text_input("Filtrar por parceiro:").lower().strip()
-    doc_filtrado = st.text_input("Filtrar por documento:").lower().strip()
+            df_visual = df_fin[[campo_data_fin, campo_doc_fin, campo_parceiro_fin, 'VALOR_CONSOLIDADO', 'STATUS']].copy()
 
-    df_visual = df_fin[[campo_data_fin, campo_doc_fin, campo_parceiro_fin, 'VALOR_CONSOLIDADO', 'STATUS']].copy()
+            if status_filtrado != "Todos":
+                df_visual = df_visual[df_visual['STATUS'] == status_filtrado]
+            if parceiro_filtrado:
+                df_visual = df_visual[df_visual[campo_parceiro_fin].astype(str).str.lower().str.contains(parceiro_filtrado)]
+            if doc_filtrado:
+                df_visual = df_visual[df_visual[campo_doc_fin].astype(str).str.lower().str.contains(doc_filtrado)]
 
-    if status_filtrado != "Todos":
-        df_visual = df_visual[df_visual['STATUS'] == status_filtrado]
-    if parceiro_filtrado:
-        df_visual = df_visual[df_visual[campo_parceiro_fin].astype(str).str.lower().str.contains(parceiro_filtrado)]
-    if doc_filtrado:
-        df_visual = df_visual[df_visual[campo_doc_fin].astype(str).str.lower().str.contains(doc_filtrado)]
+            def colorir_linhas(val):
+                if val == 'Conciliado':
+                    return 'background-color: #d4edda; color: black'  # verde claro
+                elif val == 'Parcial':
+                    return 'background-color: #fff3cd; color: black'  # amarelo claro
+                else:
+                    return 'background-color: #f8d7da; color: black'  # vermelho claro
 
-    def colorir_linhas(val):
-    if val == 'Conciliado':
-        return 'background-color: #d4edda; color: black'  # verde claro
-    elif val == 'Parcial':
-        return 'background-color: #fff3cd; color: black'  # amarelo claro
-    else:
-        return 'background-color: #f8d7da; color: black'  # vermelho claro
+            styled_df = df_visual.style.applymap(colorir_linhas, subset=['STATUS'])
+            st.dataframe(styled_df, use_container_width=True)
 
-styled_df = df_visual.style.applymap(colorir_linhas, subset=['STATUS'])
-st.dataframe(styled_df, use_container_width=True)
+            resumo = pd.DataFrame({
+                'Fonte': ['Financeiro'],
+                'Total de Linhas': [len(df_fin)],
+                'Conciliados': [len(df_fin[df_fin['STATUS'] == 'Conciliado'])],
+                'Parciais': [len(df_fin[df_fin['STATUS'] == 'Parcial'])],
+                'Não Encontrados': [len(df_fin[df_fin['STATUS'] == 'Não Encontrado'])]
+            })
+            st.markdown("### 📌 Resumo")
+            st.dataframe(resumo)
 
-    resumo = pd.DataFrame({
-        'Fonte': ['Financeiro'],
-        'Total de Linhas': [len(df_fin)],
-        'Conciliados': [len(df_fin[df_fin['STATUS'] == 'Conciliado'])],
-        'Parciais': [len(df_fin[df_fin['STATUS'] == 'Parcial'])],
-        'Não Encontrados': [len(df_fin[df_fin['STATUS'] == 'Não Encontrado'])]
-    })
-    st.markdown("### 📌 Resumo")
-    st.dataframe(resumo)
-
-    buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df_visual.to_excel(writer, index=False, sheet_name='Resultado Filtrado')
-    st.download_button("📥 Baixar resultado filtrado", buffer.getvalue(), file_name="consolidado_filtrado.xlsx")
+            buffer = BytesIO()
+            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                df_visual.to_excel(writer, index=False, sheet_name='Resultado Filtrado')
+            st.download_button("📥 Baixar resultado filtrado", buffer.getvalue(), file_name="consolidado_filtrado.xlsx")
