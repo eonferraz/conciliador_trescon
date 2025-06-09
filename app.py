@@ -145,7 +145,16 @@ if arquivo_fin and arquivo_con:
     if doc_filtrado:
         df_visual = df_visual[df_visual[campo_doc_fin].astype(str).str.lower().str.contains(doc_filtrado)]
 
-    st.dataframe(df_visual, use_container_width=True)
+    def colorir_linhas(val):
+    if val == 'Conciliado':
+        return 'background-color: #d4edda; color: black'  # verde claro
+    elif val == 'Parcial':
+        return 'background-color: #fff3cd; color: black'  # amarelo claro
+    else:
+        return 'background-color: #f8d7da; color: black'  # vermelho claro
+
+styled_df = df_visual.style.applymap(colorir_linhas, subset=['STATUS'])
+st.dataframe(styled_df, use_container_width=True)
 
     resumo = pd.DataFrame({
         'Fonte': ['Financeiro'],
