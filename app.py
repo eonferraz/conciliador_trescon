@@ -128,11 +128,19 @@ if arquivo_fin and arquivo_con:
                     df_con.at[idx_parcial, 'STATUS'] = 'Parcial'
 
         st.subheader("📊 Resultado da Conciliação")
-        status_filtrado = st.selectbox("Filtrar por status:", options=["Todos", "Conciliado", "Parcial", "Não Encontrado"])
+
+        with st.expander("🔍 Filtrar Resultado"):
+            status_filtrado = st.selectbox("Filtrar por status:", options=["Todos", "Conciliado", "Parcial", "Não Encontrado"])
+            parceiro_filtro = st.text_input("Filtrar por parceiro (contendo):", value="")
+            doc_filtro = st.text_input("Filtrar por documento (contendo):", value="")
 
         df_visual = df_fin[[campo_data_fin, campo_doc_fin, campo_parceiro_fin, 'VALOR_CONSOLIDADO', 'STATUS']]
         if status_filtrado != "Todos":
             df_visual = df_visual[df_visual['STATUS'] == status_filtrado]
+        if parceiro_filtro:
+            df_visual = df_visual[df_visual[campo_parceiro_fin].astype(str).str.contains(parceiro_filtro, case=False, na=False)]
+        if doc_filtro:
+            df_visual = df_visual[df_visual[campo_doc_fin].astype(str).str.contains(doc_filtro, case=False, na=False)]
 
         st.dataframe(df_visual)
 
@@ -150,4 +158,4 @@ if arquivo_fin and arquivo_con:
         buffer = BytesIO()
         with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
             df_visual.to_excel(writer, index=False, sheet_name='Conciliação Filtrada')
-        st.download_button("📥 Baixar resultado filtrado", buffer.getvalue(), file_name="consolidado_filtrado.xlsx")
+        st.download_button("📅 Baixar resultado filtrado", buffer.getvalue(), file_name="consolidado_filtrado.xlsx")
