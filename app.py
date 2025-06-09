@@ -87,17 +87,22 @@ if arquivo_fin and arquivo_con:
             colunas_con = df_con.columns.tolist()
 
             modo_con = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_con")
-            campo_data_con = st.selectbox("Data:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'data')), key="data_con")
-            campo_doc_con = st.selectbox("Documento:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'documento')), key="doc_con")
+            sugestao_data_con = sugerir_coluna(df_con, 'data')
+            campo_data_con = st.selectbox("Data:", colunas_con, index=colunas_con.index(sugestao_data_con) if sugestao_data_con in colunas_con else 0, key="data_con")
+            sugestao_doc_con = sugerir_coluna(df_con, 'documento')
+            campo_doc_con = st.selectbox("Documento:", colunas_con, index=colunas_con.index(sugestao_doc_con) if sugestao_doc_con in colunas_con else 0, key="doc_con")
             sugestao_parceiro_con = sugerir_coluna(df_con, 'parceiro')
             campo_parceiro_con = st.selectbox("Parceiro:", colunas_con, index=colunas_con.index(sugestao_parceiro_con) if sugestao_parceiro_con in colunas_con else 0, key="parceiro_con")
 
             if modo_con == "Campo único de valor":
-                campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'valor')), key="valor_con")
+                sugestao_valor_con = sugerir_coluna(df_con, 'valor')
+                campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugestao_valor_con) if sugestao_valor_con in colunas_con else 0, key="valor_con")
                 df_con["VALOR_CONSOLIDADO"] = pd.to_numeric(df_con[campo_valor_con], errors='coerce')
             else:
-                campo_credito_con = st.selectbox("Crédito:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'credito')), key="credito_con")
-                campo_debito_con = st.selectbox("Débito:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'debito')), key="debito_con")
+                sugestao_credito_con = sugerir_coluna(df_con, 'credito')
+                campo_credito_con = st.selectbox("Crédito:", colunas_con, index=colunas_con.index(sugestao_credito_con) if sugestao_credito_con in colunas_con else 0, key="credito_con")
+                sugestao_debito_con = sugerir_coluna(df_con, 'debito')
+                campo_debito_con = st.selectbox("Débito:", colunas_con, index=colunas_con.index(sugestao_debito_con) if sugestao_debito_con in colunas_con else 0, key="debito_con")
                 df_con["VALOR_CONSOLIDADO"] = pd.to_numeric(df_con[campo_credito_con], errors='coerce').fillna(0) - pd.to_numeric(df_con[campo_debito_con], errors='coerce').fillna(0)
             df_con[campo_data_con] = pd.to_datetime(df_con[campo_data_con], errors='coerce')
 
