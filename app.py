@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 import numpy as np
+from rapidfuzz import fuzz
+import unidecode
 
 st.set_page_config(layout="wide")
 
@@ -48,6 +50,9 @@ def sugerir_coluna(df, tipo):
             if sugestao in nome:
                 return df.columns[i]
     return None
+
+def normalizar_nome(nome):
+    return unidecode.unidecode(str(nome)).lower().replace('.', '').replace(' ', '')
 
 # --- Processamento ---
 df_fin, df_con = None, None
@@ -106,24 +111,30 @@ if arquivo_fin and arquivo_con:
                 df_con["VALOR_CONSOLIDADO"] = pd.to_numeric(df_con[campo_credito_con], errors='coerce').fillna(0) - pd.to_numeric(df_con[campo_debito_con], errors='coerce').fillna(0)
             df_con[campo_data_con] = pd.to_datetime(df_con[campo_data_con], errors='coerce')
 
+    considerar_parceiro = st.checkbox("Considerar similaridade de parceiro na conciliação")
+
     if st.button("🔍 Iniciar Conciliação"):
         tolerancia = 0.05
-
         df_fin['STATUS'] = 'Não Encontrado'
         df_con['STATUS'] = 'Não Encontrado'
 
         for i, linha_fin in df_fin.iterrows():
             valor_fin = linha_fin['VALOR_CONSOLIDADO']
             doc_fin = str(linha_fin[campo_doc_fin]).strip()
+            parceiro_fin = normalizar_nome(linha_fin[campo_parceiro_fin])
 
-            candidatos = df_con[abs(df_con['VALOR_CONSOLIDADO'] - valor_fin) <= tolerancia]
+            candidatos = df_con[abs(df_con['VALOR_CONSOLIDADO'] - valor_fin) <= tolerancia].copy()
+
             if not candidatos.empty:
-                if doc_fin in candidatos[campo_doc_con].astype(str).str.strip().values:
-                    idx_match = candidatos[candidatos[campo_doc_con].astype(str).str.strip() == doc_fin].index[0]
+                candidatos['DOC_OK'] = candidatos[campo_doc_con].astype(str).str.strip() == doc_fin
+                candidatos['SIMILARIDADE'] = candidatos[campo_parceiro_con].apply(lambda x: fuzz.partial_ratio(parceiro_fin, normalizar_nome(x)))
+
+                if any(candidatos['DOC_OK']):
+                    idx_match = candidatos[candidatos['DOC_OK']].index[0]
                     df_fin.at[i, 'STATUS'] = 'Conciliado'
                     df_con.at[idx_match, 'STATUS'] = 'Conciliado'
-                else:
-                    idx_parcial = candidatos.index[0]
+                elif considerar_parceiro and any(candidatos['SIMILARIDADE'] >= 85):
+                    idx_parcial = candidatos[candidatos['SIMILARIDADE'] >= 85].index[0]
                     df_fin.at[i, 'STATUS'] = 'Parcial'
                     df_con.at[idx_parcial, 'STATUS'] = 'Parcial'
 
