@@ -87,7 +87,7 @@ if arquivo_fin and arquivo_con:
             df_con[campo_data_con] = pd.to_datetime(df_con[campo_data_con], errors='coerce')
 
     if st.button("🔍 Executar Conciliação"):
-    with st.spinner("Conciliando registros..."):
+        with st.spinner("Conciliando registros..."):
         campo_doc_fin = st.selectbox("Campo de Documento:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'documento')) if sugerir_coluna(df_fin, 'documento') in colunas_fin else 0, key="doc_fin")
         campo_parceiro_fin = st.selectbox("Campo de Parceiro:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'parceiro')) if sugerir_coluna(df_fin, 'parceiro') in colunas_fin else 0, key="parceiro_fin")
         df_fin['STATUS'] = 'Não Encontrado'
