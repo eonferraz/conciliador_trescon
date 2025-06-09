@@ -4,3 +4,4 @@ numpy
 xlsxwriter
 rapidfuzz
 unidecode
+openpyxl
