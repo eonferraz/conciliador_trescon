@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 import numpy as np
+from rapidfuzz import fuzz
+import unidecode
 
 st.set_page_config(layout="wide")
 
@@ -21,24 +23,10 @@ st.markdown(
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# --- Uploads ---
-col1, col2 = st.columns(2)
-
-with col1:
-    st.header("📁 Arquivo Financeiro")
-    arquivo_fin = st.file_uploader("Selecione o arquivo financeiro", type="xlsx", key="fin")
-
-with col2:
-    st.header("📁 Arquivo Contábil")
-    arquivo_con = st.file_uploader("Selecione o arquivo contábil", type="xlsx", key="con")
-
-# --- Função de sugestão de coluna ---
 def sugerir_coluna(df, tipo):
     nomes = [col.lower() for col in df.columns]
     sugestoes = {
         'valor': ['valor', 'vlr_total', 'vlr', 'total'],
-        'credito': ['credito', 'crédito', 'vlr_cred'],
-        'debito': ['debito', 'débito', 'vlr_deb'],
         'data': ['data', 'dt_pagamento', 'dt_baixa', 'dt_lancamento'],
         'documento': ['documento', 'doc', 'nf', 'nota', 'numero'],
         'parceiro': ['parceiro', 'cliente', 'fornecedor', 'cnpj', 'razao']
@@ -49,113 +37,94 @@ def sugerir_coluna(df, tipo):
                 return df.columns[i]
     return None
 
-# --- Processamento ---
+def normalizar_nome(nome):
+    return unidecode.unidecode(str(nome)).lower().replace('.', '').replace(' ', '')
+
+# Upload único ou duplo
+modo_input = st.radio("Modo de Upload:", ["Arquivo único (com duas abas)", "Dois arquivos separados"], horizontal=True)
+
 df_fin, df_con = None, None
 
-if arquivo_fin:
-    xls_fin = pd.ExcelFile(arquivo_fin)
+if modo_input == "Arquivo único (com duas abas)":
+    arquivo_unico = st.file_uploader("Selecione o arquivo contendo as abas 'Financeiro' e 'Contábil'", type="xlsx")
+    if arquivo_unico:
+        xls = pd.ExcelFile(arquivo_unico)
+        abas = xls.sheet_names
+        if "Financeiro" in abas and "Contábil" in abas:
+            df_fin = pd.read_excel(xls, sheet_name="Financeiro")
+            df_con = pd.read_excel(xls, sheet_name="Contábil")
+        else:
+            st.warning("As abas 'Financeiro' e 'Contábil' não foram encontradas no arquivo.")
+else:
+    col1, col2 = st.columns(2)
+    with col1:
+        arquivo_fin = st.file_uploader("📁 Arquivo Financeiro", type="xlsx", key="fin")
+    with col2:
+        arquivo_con = st.file_uploader("📁 Arquivo Contábil", type="xlsx", key="con")
+    if arquivo_fin and arquivo_con:
+        df_fin = pd.read_excel(arquivo_fin)
+        df_con = pd.read_excel(arquivo_con)
 
-if arquivo_con:
-    xls_con = pd.ExcelFile(arquivo_con)
+if df_fin is not None and df_con is not None:
+    st.markdown("<style>div[data-testid='stSelectbox'] label, div[data-testid='stRadio'] label, div[data-testid='stTextInput'] label { font-size: 0.85rem !important; }</style>", unsafe_allow_html=True)
 
-if arquivo_fin and arquivo_con:
-    st.markdown("### 🧹 Mapeamento dos campos para conciliação")
-    col5, col6 = st.columns(2)
+    with st.expander("⚙️ Parâmetros de Conciliação", expanded=True):
+        col5, col6 = st.columns(2)
 
-    with col5:
-        st.write("**Financeiro**")
-        aba_fin = st.selectbox("Escolha a aba (financeiro):", xls_fin.sheet_names, key="aba_fin")
-        if aba_fin:
-            df_fin = pd.read_excel(xls_fin, sheet_name=aba_fin)
+        with col5:
+            st.write("**Financeiro**")
+            st.dataframe(df_fin.head(5), height=150)
             colunas_fin = df_fin.columns.tolist()
-            st.dataframe(df_fin.head(5))
-
-            modo_fin = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_fin")
-            campo_data_fin = st.selectbox("Data:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'data')) if sugerir_coluna(df_fin, 'data') in colunas_fin else 0, key="data_fin")
-            campo_doc_fin = st.selectbox("Documento:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'documento')) if sugerir_coluna(df_fin, 'documento') in colunas_fin else 0, key="doc_fin")
-            campo_parceiro_fin = st.selectbox("Parceiro:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'parceiro')) if sugerir_coluna(df_fin, 'parceiro') in colunas_fin else 0, key="parceiro_fin")
-
-            if modo_fin == "Campo único de valor":
-                campo_valor_fin = st.selectbox("Campo de Valor:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0, key="valor_fin")
-                df_fin["VALOR_CONSOLIDADO"] = pd.to_numeric(df_fin[campo_valor_fin], errors='coerce')
-            else:
-                campo_credito_fin = st.selectbox("Crédito:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'credito')) if sugerir_coluna(df_fin, 'credito') in colunas_fin else 0, key="credito_fin")
-                campo_debito_fin = st.selectbox("Débito:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'debito')) if sugerir_coluna(df_fin, 'debito') in colunas_fin else 0, key="debito_fin")
-                df_fin["VALOR_CONSOLIDADO"] = pd.to_numeric(df_fin[campo_credito_fin], errors='coerce').fillna(0) - pd.to_numeric(df_fin[campo_debito_fin], errors='coerce').fillna(0)
+            campo_valor_fin = st.selectbox("Campo de Valor:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')) if sugerir_coluna(df_fin, 'valor') in colunas_fin else 0, key="valor_fin")
+            df_fin["VALOR_CONSOLIDADO"] = pd.to_numeric(df_fin[campo_valor_fin], errors='coerce')
+            campo_data_fin = st.selectbox("Campo de Data:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'data')) if sugerir_coluna(df_fin, 'data') in colunas_fin else 0, key="data_fin")
             df_fin[campo_data_fin] = pd.to_datetime(df_fin[campo_data_fin], errors='coerce')
+            campo_doc_fin = st.selectbox("Campo de Documento:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'documento')) if sugerir_coluna(df_fin, 'documento') in colunas_fin else 0, key="doc_fin")
+            campo_parceiro_fin = st.selectbox("Campo de Parceiro:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'parceiro')) if sugerir_coluna(df_fin, 'parceiro') in colunas_fin else 0, key="parceiro_fin")
 
-    with col6:
-        st.write("**Contábil**")
-        aba_con = st.selectbox("Escolha a aba (contábil):", xls_con.sheet_names, key="aba_con")
-        if aba_con:
-            df_con = pd.read_excel(xls_con, sheet_name=aba_con)
+        with col6:
+            st.write("**Contábil**")
+            st.dataframe(df_con.head(5), height=150)
             colunas_con = df_con.columns.tolist()
-            st.dataframe(df_con.head(5))
-
-            modo_con = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_con")
-            campo_data_con = st.selectbox("Data:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'data')) if sugerir_coluna(df_con, 'data') in colunas_con else 0, key="data_con")
-            campo_doc_con = st.selectbox("Documento:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'documento')) if sugerir_coluna(df_con, 'documento') in colunas_con else 0, key="doc_con")
-            campo_parceiro_con = st.selectbox("Parceiro:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'parceiro')) if sugerir_coluna(df_con, 'parceiro') in colunas_con else 0, key="parceiro_con")
-
-            if modo_con == "Campo único de valor":
-                campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0, key="valor_con")
-                df_con["VALOR_CONSOLIDADO"] = pd.to_numeric(df_con[campo_valor_con], errors='coerce')
-            else:
-                campo_credito_con = st.selectbox("Crédito:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'credito')) if sugerir_coluna(df_con, 'credito') in colunas_con else 0, key="credito_con")
-                campo_debito_con = st.selectbox("Débito:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'debito')) if sugerir_coluna(df_con, 'debito') in colunas_con else 0, key="debito_con")
-                df_con["VALOR_CONSOLIDADO"] = pd.to_numeric(df_con[campo_credito_con], errors='coerce').fillna(0) - pd.to_numeric(df_con[campo_debito_con], errors='coerce').fillna(0)
+            campo_valor_con = st.selectbox("Campo de Valor:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'valor')) if sugerir_coluna(df_con, 'valor') in colunas_con else 0, key="valor_con")
+            df_con["VALOR_CONSOLIDADO"] = pd.to_numeric(df_con[campo_valor_con], errors='coerce')
+            campo_data_con = st.selectbox("Campo de Data:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'data')) if sugerir_coluna(df_con, 'data') in colunas_con else 0, key="data_con")
             df_con[campo_data_con] = pd.to_datetime(df_con[campo_data_con], errors='coerce')
+            campo_doc_con = st.selectbox("Campo de Documento:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'documento')) if sugerir_coluna(df_con, 'documento') in colunas_con else 0, key="doc_con")
+            campo_parceiro_con = st.selectbox("Campo de Parceiro:", colunas_con, index=colunas_con.index(sugerir_coluna(df_con, 'parceiro')) if sugerir_coluna(df_con, 'parceiro') in colunas_con else 0, key="parceiro_con")
 
-    if st.button("🔍 Iniciar Conciliação"):
-        tolerancia = 0.05
+    if st.button("🔍 Executar Conciliação"):
+        with st.spinner("Conciliando registros..."):
+            df_fin['STATUS'] = 'Não Encontrado'
+            df_fin['PARCEIRO_NORMALIZADO'] = df_fin[campo_parceiro_fin].apply(normalizar_nome)
+            df_con['PARCEIRO_NORMALIZADO'] = df_con[campo_parceiro_con].apply(normalizar_nome)
 
-        df_fin['STATUS'] = 'Não Encontrado'
-        df_con['STATUS'] = 'Não Encontrado'
+            for i, row_fin in df_fin.iterrows():
+                for j, row_con in df_con.iterrows():
+                    if abs(row_fin['VALOR_CONSOLIDADO'] - row_con['VALOR_CONSOLIDADO']) <= 0.05:
+                        if str(row_fin[campo_doc_fin]).strip() == str(row_con[campo_doc_con]).strip():
+                            df_fin.at[i, 'STATUS'] = 'Conciliado'
+                            break
+                        elif fuzz.partial_ratio(row_fin['PARCEIRO_NORMALIZADO'], row_con['PARCEIRO_NORMALIZADO']) >= 85:
+                            df_fin.at[i, 'STATUS'] = 'Parcial'
 
-        for i, linha_fin in df_fin.iterrows():
-            valor_fin = linha_fin['VALOR_CONSOLIDADO']
-            doc_fin = str(linha_fin[campo_doc_fin]).strip()
+            resumo = pd.DataFrame({
+                'Fonte': ['Financeiro'],
+                'Total de Linhas': [len(df_fin)],
+                'Conciliados': [len(df_fin[df_fin['STATUS'] == 'Conciliado'])],
+                'Parciais': [len(df_fin[df_fin['STATUS'] == 'Parcial'])],
+                'Não Encontrados': [len(df_fin[df_fin['STATUS'] == 'Não Encontrado'])]
+            })
 
-            candidatos = df_con[abs(df_con['VALOR_CONSOLIDADO'] - valor_fin) <= tolerancia]
-            if not candidatos.empty:
-                if doc_fin in candidatos[campo_doc_con].astype(str).str.strip().values:
-                    idx_match = candidatos[candidatos[campo_doc_con].astype(str).str.strip() == doc_fin].index[0]
-                    df_fin.at[i, 'STATUS'] = 'Conciliado'
-                    df_con.at[idx_match, 'STATUS'] = 'Conciliado'
-                else:
-                    idx_parcial = candidatos.index[0]
-                    df_fin.at[i, 'STATUS'] = 'Parcial'
-                    df_con.at[idx_parcial, 'STATUS'] = 'Parcial'
+            buffer = BytesIO()
+            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                df_fin.to_excel(writer, sheet_name='Financeiro', index=False)
+                df_con.to_excel(writer, sheet_name='Contabil', index=False)
+                resumo.to_excel(writer, sheet_name='Resumo', index=False)
 
-        resumo = pd.DataFrame({
-            'Fonte': ['Financeiro', 'Contábil'],
-            'Total de Linhas': [len(df_fin), len(df_con)],
-            'Conciliados': [len(df_fin[df_fin['STATUS'] == 'Conciliado']), len(df_con[df_con['STATUS'] == 'Conciliado'])],
-            'Parciais': [len(df_fin[df_fin['STATUS'] == 'Parcial']), len(df_con[df_con['STATUS'] == 'Parcial'])],
-            'Não Encontrados': [len(df_fin[df_fin['STATUS'] == 'Não Encontrado']), len(df_con[df_con['STATUS'] == 'Não Encontrado'])]
-        })
-
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_fin.to_excel(writer, sheet_name='Financeiro - Original', index=False)
-            df_con.to_excel(writer, sheet_name='Contabil - Original', index=False)
-
-            campos_export_fin = [campo_data_fin, campo_doc_fin, campo_parceiro_fin, 'VALOR_CONSOLIDADO', 'STATUS']
-            campos_export_con = [campo_data_con, campo_doc_con, campo_parceiro_con, 'VALOR_CONSOLIDADO', 'STATUS']
-
-            df_fin[campos_export_fin].to_excel(writer, sheet_name='Financeiro', index=False)
-            df_con[campos_export_con].to_excel(writer, sheet_name='Contabil', index=False)
-
-            for aba, df in [('Financeiro', df_fin[campos_export_fin]), ('Contabil', df_con[campos_export_con])]:
-                ws = writer.sheets[aba]
-                for i, status in enumerate(df['STATUS']):
-                    cor = {
-                        'Conciliado': '#C6EFCE',
-                        'Parcial': '#FFEB9C',
-                        'Não Encontrado': '#FFC7CE'
-                    }.get(status, '#FFFFFF')
-                    ws.set_row(i+1, None, writer.book.add_format({'bg_color': cor}))
-
-            resumo.to_excel(writer, sheet_name='Resumo', index=False)
-
-        st.download_button("📄 Baixar Resultado da Conciliação", output.getvalue(), file_name="resultado_conciliacao.xlsx")
+            st.download_button(
+                label="📅 Baixar Conciliação em Excel",
+                data=buffer.getvalue(),
+                file_name="conciliacao_resultado.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
