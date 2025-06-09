@@ -72,7 +72,8 @@ if arquivo_fin and arquivo_con:
             modo_fin = st.radio("Formato de valor:", ["Campo único de valor", "Crédito e Débito"], key="modo_fin")
             campo_data_fin = st.selectbox("Data:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'data')), key="data_fin")
             campo_doc_fin = st.selectbox("Documento:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'documento')), key="doc_fin")
-            campo_parceiro_fin = st.selectbox("Parceiro:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'parceiro')), key="parceiro_fin")
+            sugestao_parceiro_fin = sugerir_coluna(df_fin, 'parceiro')
+campo_parceiro_fin = st.selectbox("Parceiro:", colunas_fin, index=colunas_fin.index(sugestao_parceiro_fin) if sugestao_parceiro_fin in colunas_fin else 0, key="parceiro_fin")
 
             if modo_fin == "Campo único de valor":
                 campo_valor_fin = st.selectbox("Campo de Valor:", colunas_fin, index=colunas_fin.index(sugerir_coluna(df_fin, 'valor')), key="valor_fin")
