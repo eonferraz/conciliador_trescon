@@ -7,7 +7,6 @@ Este projeto é um app em Python + Streamlit que permite visualizar e conciliar 
 - Seleção de abas individualmente para cada arquivo
 - Visualização das 5 primeiras linhas para inspeção da estrutura
 
-
 ---
 
 Criado por Paulo Eduardo Ferraz 🧠
